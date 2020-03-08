@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hr.dao.ProductMapper">
+	<resultMap type="Product" id="productBaseMap">
+		<id column="ep_id" property="ep_id"/>
+		<result column="ep_name" property="ep_name"/>
+		<result column="ep_description" property="ep_description"/>
+		<result column="ep_price" property="ep_price"/>
+		<result column="ep_stock" property="ep_stock"/>
+		<result column="epc_id" property="epc_id"/>
+		<result column="epc_child_id" property="epc_child_id"/>
+		<result column="ep_file_name" property="ep_file_name"/>
+	</resultMap>
+	
+	
+	<sql id="selectSql">
+		select * from easybuy_product
+	</sql>
+	
+	<!-- 查询全部 -->
+	<select id="queryAll" parameterType="Product" resultType="Product">
+		<include refid="selectSql" />
+			where 1 = 1 
+	</select>
+	
+	<!-- 根据ID查询全部信息 -->
+	<select id="query2" parameterType="Product" resultType="Product">
+		<include refid="selectSql" />
+		<!-- where节点在有条件成立时会自动添加where关键字，并且会去掉紧跟在where之后的第一个and/or关键字 -->
+		<where>
+			ep_id = #{ep_id}
+		</where>
+	</select>
+	
+	<!-- 查询多条信息查詢 -->
+	<select id="query3" resultType="Product">
+		<include refid="selectSql" />
+		<!-- 
+			collection:指定要循环的数组（array）/ 集合（list），必须的
+			item:指定循环变量,必须的
+			close:指定循环结束时拼接的字符串，可选的
+			open:执行循环开始时拼接的字符串，可选的
+			index:指定一个变量存储循环下标，可选的
+			separator：指定循环过程中两个元素之间拼接的字符串，可选的
+		 -->
+		<if test="array != null">
+			<foreach collection="array" item="id" close=")" open="where ep_id in(" separator="," >
+				#{id}
+			</foreach>
+		</if>
+	</select>
+	
+	<select id="query4" resultType="Product">
+		<include refid="selectSql" />
+		<!-- 
+			collection:指定要循环的数组（array）/ 集合（list），必须的
+			item:指定循环变量,必须的
+			close:指定循环结束时拼接的字符串，可选的
+			open:执行循环开始时拼接的字符串，可选的
+			index:指定一个变量存储循环下标，可选的
+			separator：指定循环过程中两个元素之间拼接的字符串，可选的
+			注意：如果参数list中存储的是实体类对象，那么循环中要写#{对象.属性}
+		 -->
+		 <if test="list != null">
+		 	<foreach collection="list" item="p" close=")" open="where ep_id in(" separator=",">
+		 		#{p.ep_id}
+			 </foreach>
+		 </if>
+	</select>
+	
+	<!-- 条件查询 -->
+	<select id="query5" parameterType="Product" resultType="Product">
+		<include refid="selectSql"/>
+		
+		<!-- 
+			prefix:给trim节点内包含的sql语句添加指定的前缀字符串
+			prefixOverrides:去掉trim节点内包含的sql语句指定的前缀字符串
+			suffix:给trim节点内包含的sql语句添加指定的后缀字符串
+			suffixOverrides:去掉trim节点内包含的sql语句指定的后缀字符串
+		 -->
+		
+		<trim prefix="where" prefixOverrides="and|or">
+			<if test="ep_description != null and ep_name != ''">
+				and ep_description = #{ep_description}
+			</if>
+			<if test="ep_price != null">
+				<!-- 
+					and eo_cost &lt; #{eo_cost}
+				 -->
+				 <![CDATA[
+				 	and ep_price < #{ep_price}
+				 ]]>
+			</if>  
+		</trim>
+	</select>
+	
+	<select id="query6" parameterType="Product" resultType="Product">
+		<include refid="selectSql"/>
+		<!-- where节点在有条件成立时会自动添加where关键字，并且会去掉紧跟在where之后的第一个and/or关键字 -->
+		<where>
+			<choose>
+				<when test="ep_description != null and !ep_description.equals('')">
+					and ep_description = #{ep_description}
+				</when>
+				<when test="ep_price != null and ep_price &lt; 300">
+					<![CDATA[
+				 		and ep_price < #{ep_price}
+					 ]]>
+				</when>
+			</choose>
+		</where>
+	</select>
+	
+	
+	<!-- 修改 -->
+	<update id="update" parameterType="Product">
+		update easybuy_product
+		<trim prefix="set" suffixOverrides=",">
+			ep_id = ep_id,
+			<if test="ep_name != null and !ep_name.equals('')">
+				ep_name = #{ep_name},
+			</if>
+			<if test="ep_price!=null and !ep_price.equals('')">
+				ep_price=#{ep_price}
+			</if>
+		</trim>
+		where ep_id = #{ep_id}
+	</update>
+	
+	<update id="update2" parameterType="Product">
+		update easybuy_product
+		<!-- 当有条件成立时，set节点帮sql语句自动添加set关键字，并且会自动去掉多余的逗号 -->
+		<set>
+			ep_id = ep_id
+			<if test="ep_name != null and !ep_name.equals('')">
+				,ep_name = #{ep_name}
+			</if>
+			<if test="ep_price!=null and !ep_price.equals('')">
+				,ep_price=#{ep_price}
+			</if>
+		</set>
+		where ep_id = #{ep_id}
+	</update>
+	
+	<!-- 添加 -->
+	<insert id="insert">
+		insert into easybuy_product(ep_id,ep_name,ep_price) values
+		<foreach collection="list" item="p" separator=",">
+			(0,#{p.ep_name},#{p.ep_price})
+		</foreach>
+	</insert>
+	
+	
+	
+</mapper>
